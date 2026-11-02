@@ -69,7 +69,7 @@ The range is wider with fewer rises in most of these checks, and the strongest r
 
 ![Pay response at each point in the pay scale](figures/spillovers.png)
 
-A 1% higher minimum lifts pay by 0.83% at the 5th percentile (0.78 to 0.96), 0.60% at the 10th (0.48 to 0.87) and 0.23% at the 25th (0.12 to 0.36). From the 40th percentile the range includes zero. The flat 0.13 to 0.14 near the top suggests that part of the lower numbers is general pay growth in the same provinces, not the minimum itself.
+A 1% higher minimum lifts pay by 0.83% at the 5th percentile (0.78 to 0.96), 0.60% at the 10th (0.48 to 0.87) and 0.23% at the 25th (0.12 to 0.36). From the 40th percentile the range includes zero. The 0.13 to 0.14 from the 55th to the 70th percentile (0.10 at the 75th) suggests that part of the lower numbers is general pay growth in the same provinces, not the minimum itself.
 
 These estimates use every year from 2006 to 2025, including 2020 and 2021, when low-paid job losses changed who was left in the pay scale. That change isn't a minimum wage effect, so I reran the panel without those two years. It gives 0.82% at the 5th percentile (0.76 to 0.95), 0.60% at the 10th (0.46 to 0.87) and 0.23% at the 25th (0.10 to 0.37), and the range still includes zero from the 40th. No percentile moves by as much as 0.02, so the numbers above stay as the main ones.
 
