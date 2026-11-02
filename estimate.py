@@ -2,11 +2,12 @@
 import numpy as np
 import pandas as pd
 
-from data import OUTPUT, cpi, minimum_wage
+from data import OUTPUT, cpi, last_month, minimum_wage
 from panels import cells
 
 COVID = (pd.Timestamp("2020-03-01"), pd.Timestamp("2021-12-01"))
-FIRST, LAST = pd.Timestamp("2006-01-01"), pd.Timestamp("2026-09-01")
+FIRST, LAST = pd.Timestamp("2006-01-01"), last_month()
+FULL_YEARS_TO = (LAST + pd.DateOffset(months=1)).year - 1    # the annual tables leave out a part-finished year
 MIN_DOSE, CONTROL_MAX = 0.04, 0.03    # real rise for an event; largest nominal rise a comparison province may have
 UP_TO = 4                             # jobs from the new minimum up to this many dollars above count as moved up
 WEBB = np.outer([-1, 1], np.sqrt([0.5, 1.0, 1.5])).ravel()
@@ -162,7 +163,7 @@ def annual_minimum():
 
 def percentiles(bins, qs=range(5, 80, 5)):
     b = bins.assign(year=bins.date.dt.year)
-    g = b[b.year <= 2025].groupby(["prov", "year", "bin"]).w.sum().reset_index()
+    g = b[b.year <= FULL_YEARS_TO].groupby(["prov", "year", "bin"]).w.sum().reset_index()
     rows = []
     for (prov, year), x in g.groupby(["prov", "year"]):
         x = x.sort_values("bin")
@@ -197,7 +198,7 @@ def panel_jobs(c):
     real = annual_minimum()
     o = c["outcome"].assign(year=c["outcome"].date.dt.year)
     rows = []
-    for group, g in o[o.year <= 2025].groupby("group"):
+    for group, g in o[o.year <= FULL_YEARS_TO].groupby("group"):
         a = g.groupby(["prov", "year"])[["w", "emp", "hrs"]].sum().reset_index().merge(real, on=["prov", "year"])
         a["x"] = residual(a, "lmw")
         for name in ("emp", "hrs"):
@@ -245,3 +246,4 @@ if __name__ == "__main__":
     sp, pc = spillovers(c)
     sp.to_csv(OUTPUT / "spillovers.csv", index=False)
     pc.to_csv(OUTPUT / "percentiles.csv", index=False)
+    (OUTPUT / "estimated_through.txt").write_text(LAST.strftime("%Y-%m") + "\n")

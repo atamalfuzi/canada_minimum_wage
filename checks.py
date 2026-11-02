@@ -45,7 +45,7 @@ def placebo(c, ev, groups=MAIN, draws=4000, seed=0):
 def sensitivity(c, base):
     """Do the headline numbers survive other event rules, and dropping any one province?"""
     m, _ = wide()
-    variants = {"All 22 rises": base,
+    variants = {f"All {len(base)} rises": base,
                 "Real rise of at least 6%": events(min_dose=0.06),
                 "Comparison provinces rose under 2%": events(control_max=0.02),
                 "One step in the 12 months after": base[[(m[e.prov].loc[e.post].diff() > 0).sum() == 0 for e in base.itertuples()]]}

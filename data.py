@@ -1,6 +1,8 @@
 """Get the public Labour Force Survey files, the federal minimum wage database and the CPI, and read them into tables."""
+import http.client
 import json
 import re
+import time
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -20,20 +22,29 @@ KEEP = ["SURVYEAR", "SURVMNTH", "LFSSTAT", "PROV", "AGE_12", "GENDER", "SEX", "E
         "UTOTHRS", "HRLYEARN", "FINALWT"]
 
 
+def get(url, timeout=300, tries=3):
+    """One dropped connection shouldn't end a 640 MB download."""
+    request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    for attempt in range(1, tries + 1):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as r:
+                return r.read()
+        except (OSError, http.client.HTTPException):
+            if attempt == tries:
+                raise
+            time.sleep(30)
+
+
 def fetch(url, path):
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
-        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(request, timeout=300) as r:
-            path.write_bytes(r.read())
+        path.write_bytes(get(url))
     return path
 
 
 def download():
     """Every survey file Statistics Canada lists, about 640 MB the first time."""
-    request = urllib.request.Request(PUMF + "71m0001x2021001-eng.htm", headers={"User-Agent": "Mozilla/5.0"})
-    with urllib.request.urlopen(request, timeout=60) as r:
-        page = r.read().decode("utf-8", "ignore")
+    page = get(PUMF + "71m0001x2021001-eng.htm", timeout=60).decode("utf-8", "ignore")
     for link in sorted(set(re.findall(r'href="(2021001/[^"]*-CSV\.zip)"', page))):
         fetch(PUMF + link, RAW / Path(link).name.replace("-CSV", ""))
     fetch(WAGES, RAW / "minimum_wage.json")
@@ -73,12 +84,18 @@ def survey():
     return out
 
 
-def general_rates(data):
-    """The general hourly rate for each province and start date, from the database's JSON."""
+def rate_rows(data):
+    """Every row of the database's JSON, with its province and start date."""
     w, p = pd.DataFrame(data["wages"]), pd.DataFrame(data["provinces"])
     w = w.merge(p[["prov_id", "province_code"]], left_on="prov_prov_id", right_on="prov_id")
     w["prov"] = w.province_code.replace({"NF": "NL"})
     w["start"] = pd.to_datetime(w.effective_date.str[:10], format="%Y/%m/%d")
+    return w
+
+
+def general_rows(data):
+    """The rows that set a general rate, with the database's known errors corrected."""
+    w = rate_rows(data)
     # The database's general-rate flag misses these rows, which have no special category attached.
     missed = {("ON", "2023-10-01"), ("MB", "2023-10-01"), ("SK", "2023-10-01"), ("PE", "2024-04-01"), ("NB", "2009-04-15")}
     added = w.mwv_minimum_wage_variation_id.isna() & pd.Series(
@@ -87,12 +104,16 @@ def general_rates(data):
     # One BC row is dated 2026-06-01 and expires 2025-06-01: its start year is a typo for 2025.
     w.loc[(w.prov == "BC") & (w.minimum_wage_amount == 17.85), "start"] = pd.Timestamp("2025-06-01")
     # One Alberta row is a stray $1.99 dated 2005.
-    w = w[w.prov.isin(PROVS.values()) & (w.minimum_wage_amount >= 2.5)]
-    w = w[["prov", "start", "minimum_wage_amount"]].rename(columns={"minimum_wage_amount": "mw"})
+    return w[w.prov.isin(PROVS.values()) & (w.minimum_wage_amount >= 2.5)]
+
+
+def general_rates(data):
+    """The general hourly rate for each province and start date, from the database's JSON."""
+    w = general_rows(data)[["prov", "start", "minimum_wage_amount"]].rename(columns={"minimum_wage_amount": "mw"})
     return w.drop_duplicates(["prov", "start"]).sort_values(["prov", "start"])
 
 
-def monthly_rates(steps, first="2005-01-01", last="2026-12-01"):
+def monthly_rates(steps, first="2005-01-01", last=f"{pd.Timestamp.today().year + 1}-12-01"):
     """The rate in force on the 15th of each month, since the survey's reference week holds the 15th."""
     months = pd.date_range(first, last, freq="MS")
     rows = []
@@ -102,8 +123,12 @@ def monthly_rates(steps, first="2005-01-01", last="2026-12-01"):
     return pd.concat(rows, ignore_index=True)
 
 
+def rate_file():
+    return json.loads((RAW / "minimum_wage.json").read_text(encoding="utf-8-sig"))["data"]
+
+
 def minimum_wage():
-    return monthly_rates(general_rates(json.loads((RAW / "minimum_wage.json").read_text(encoding="utf-8-sig"))["data"]))
+    return monthly_rates(general_rates(rate_file()))
 
 
 def cpi():
@@ -115,6 +140,21 @@ def cpi():
     c = c[c.date >= "2005-01-01"]
     c["cpi"] /= c[c.date.dt.year == 2025].cpi.mean() / 100
     return c
+
+
+def survey_end():
+    """The newest month the survey files reach, from their names: 2026-09.zip, or 2025.zip for a whole year."""
+    names = [p.stem for p in RAW.glob("*.zip") if p.stem != "cpi"]
+    return max((pd.Timestamp(f"{n}-12-01" if len(n) == 4 else f"{n}-01") for n in names), default=None)
+
+
+def last_month():
+    """The newest month both the survey and the CPI reach, or the study's first end date before any download. The CPI
+    comes out about ten days after the survey, and a survey month with no CPI drops out of the panels."""
+    end = survey_end()
+    if end is None or not (RAW / "cpi.zip").exists():
+        return pd.Timestamp("2026-09-01")
+    return min(end, cpi().date.max())
 
 
 if __name__ == "__main__":

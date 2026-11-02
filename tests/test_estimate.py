@@ -12,6 +12,13 @@ import panels
 MONTHS = pd.date_range("2005-01-01", "2026-09-01", freq="MS")
 
 
+@pytest.fixture(autouse=True)
+def fixed_end(monkeypatch):
+    """The real end follows the files in data/, which these tests shouldn't depend on."""
+    monkeypatch.setattr(estimate, "LAST", MONTHS[-1])
+    monkeypatch.setattr(checks, "LAST", MONTHS[-1])
+
+
 def minimums(**rises):
     """Flat at $10 in five provinces, with each named province rising on the given dates."""
     m = pd.DataFrame(10.0, index=MONTHS, columns=["AA", "BB", "CC", "DD", "EE"])
@@ -128,6 +135,21 @@ def test_percentiles_read_off_the_weighted_pay_distribution():
     bins = pd.DataFrame(dict(prov="AA", date=t, bin=[10.0, 20.0, 30.0, 40.0], w=[25.0, 25.0, 25.0, 25.0]))
     p = estimate.percentiles(bins, qs=[25, 50, 75]).iloc[0]
     assert (p.p25, p.p50, p.p75) == (10.0, 20.0, 30.0)
+
+
+def test_percentiles_leave_out_a_part_finished_year(monkeypatch):
+    monkeypatch.setattr(estimate, "FULL_YEARS_TO", 2015)
+    bins = pd.DataFrame(dict(prov="AA", date=pd.to_datetime(["2015-01-01", "2016-01-01"]), bin=[10.0, 20.0], w=[1.0, 1.0]))
+    assert estimate.percentiles(bins, qs=[50]).year.tolist() == [2015]
+
+
+def test_an_event_needs_twelve_months_of_data_after_it(monkeypatch):
+    m, p = minimums(AA=[("2026-09-01", 11.0)])
+    assert estimate.events(m, p).empty
+    extended = pd.date_range("2005-01-01", "2027-08-01", freq="MS")
+    m, p = m.reindex(extended, method="ffill"), p.reindex(extended, method="ffill")
+    monkeypatch.setattr(estimate, "LAST", extended[-1])
+    assert estimate.events(m, p).date.tolist() == [pd.Timestamp("2026-09-01")]
 
 
 def test_residual_removes_province_year_and_trend_effects():

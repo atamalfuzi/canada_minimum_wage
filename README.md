@@ -6,6 +6,8 @@ What minimum wage rises did to pay and jobs in Canada, from 2006 to September 20
 
 **[Write-up with interactive charts](https://atamalfuzi.github.io/canada-minimum-wage.html).** Results are as of October 2026, with data through September 2026.
 
+**[Live dashboard](https://atamalfuzi.github.io/canada_minimum_wage/)**, rebuilt on the 25th of each month from Statistics Canada's newest Labour Force Survey file: each province's general minimum and any announced rate, pay around the minimum, the share of employees near or below it, the minimum after inflation, and teen and overall employment against the same month a year earlier. Those figures describe one month and don't show why anything changed. The study's main estimates are re-run with all data to date and shown separately, so they can drift a little from the numbers below.
+
 > **Personal project.** This is my own analysis of publicly available data. It is not associated with my work for any current or past employer and does not represent their views.
 
 | Question | Methods | Answer |
@@ -129,7 +131,9 @@ python figures.py
 python site_data.py
 ```
 
-Run them from the repository folder, in this order. `data.py` downloads about 640 MB into `data/` and later runs reuse those files. Once downloaded, the rest takes about 7 minutes. Results reproduce exactly on the same data. Delete `data/` to fetch the latest files.
+Run them from the repository folder, in this order. `data.py` downloads about 640 MB into `data/` and later runs reuse those files. Once downloaded, the rest takes about 7 minutes. Results reproduce exactly on the same data. Delete `data/` to fetch the latest files. The study runs through the newest month both the survey and the CPI reach, so results change when newer files are fetched.
+
+To build the dashboard, run `python dashboard.py` after `data.py`, `panels.py` and `estimate.py`. It writes a static site to `site/` and stops without writing if the latest survey, CPI or minimum wage data have gaps or implausible values, including new rows in the minimum wage database with the errors it has had before. The [dashboard workflow](.github/workflows/dashboard.yml) does the same on GitHub Actions on the 25th of each month and publishes to GitHub Pages only if every step passes. The 25th comes after both the survey file (between the 4th and 13th) and that month's CPI (as late as the 24th).
 
 To run the tests: `pip install -r requirements-dev.txt`, then `pytest`. They use made-up data and need no downloads.
 

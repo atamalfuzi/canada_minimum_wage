@@ -1,8 +1,10 @@
 """Reading the survey files and the minimum wage database. No downloads."""
+import io
 import zipfile
 
 import numpy as np
 import pandas as pd
+import pytest
 
 import data
 
@@ -68,6 +70,45 @@ def test_read_year_accepts_the_older_name_for_gender(tmp_path):
         z.writestr("pub0110.csv", "SURVYEAR,SURVMNTH,LFSSTAT,PROV,AGE_12,SEX,EDUC,MARSTAT,IMMIG,SCHOOLN,NAICS_21,UTOTHRS,HRLYEARN,FINALWT\n"
                                   "2010,1,1,35,1,2,2,6,3,2,19,250,1000,100\n")
     assert data.read_year(path).GENDER[0] == 2
+
+
+def test_monthly_rates_reach_past_this_year_by_default():
+    steps = pd.DataFrame(dict(prov="ON", start=pd.to_datetime(["2017-01-01"]), mw=[11.0]))
+    assert data.monthly_rates(steps).date.max().year > pd.Timestamp.today().year
+
+
+def test_the_last_month_is_the_newest_both_the_survey_and_the_cpi_reach(tmp_path, monkeypatch):
+    monkeypatch.setattr(data, "RAW", tmp_path)
+    assert data.survey_end() is None and data.last_month() == pd.Timestamp("2026-09-01")    # before any download
+    (tmp_path / "2025.zip").touch()
+    (tmp_path / "cpi.zip").touch()
+    assert data.survey_end() == pd.Timestamp("2025-12-01")
+    (tmp_path / "2026-10.zip").touch()
+    monkeypatch.setattr(data, "cpi", lambda: pd.DataFrame({"date": pd.to_datetime(["2026-08-01", "2026-09-01"])}))
+    assert data.survey_end() == pd.Timestamp("2026-10-01") and data.last_month() == pd.Timestamp("2026-09-01")
+    monkeypatch.setattr(data, "cpi", lambda: pd.DataFrame({"date": pd.to_datetime(["2026-11-01"])}))
+    assert data.last_month() == pd.Timestamp("2026-10-01")
+
+
+def test_a_dropped_connection_is_tried_again_and_a_lasting_one_stops_the_run(monkeypatch):
+    class Response(io.BytesIO):
+        pass
+
+    calls = []
+
+    def opener(request, timeout):
+        calls.append(request.full_url)
+        if len(calls) < 3:
+            raise TimeoutError
+        return Response(b"file")
+
+    monkeypatch.setattr(data.urllib.request, "urlopen", opener)
+    monkeypatch.setattr(data.time, "sleep", lambda s: None)
+    assert data.get("https://example.test/x") == b"file" and len(calls) == 3
+    calls.clear()
+    monkeypatch.setattr(data.urllib.request, "urlopen", lambda request, timeout: (_ for _ in ()).throw(TimeoutError()))
+    with pytest.raises(TimeoutError):
+        data.get("https://example.test/x")
 
 
 def test_a_full_year_file_replaces_its_monthly_files(tmp_path, monkeypatch):

@@ -46,7 +46,7 @@ def real_minimum():
     ax.yaxis.set_major_formatter(lambda v, _: f"${v:.0f}")
     save(fig, "real_minimum.png", "Provinces raised the minimum at very different times",
          "General minimum wage after inflation. Dots mark the rises studied in Ontario, BC and Alberta; other provinces in grey.",
-         "22 rises in 9 provinces are studied. Rises whose before-and-after window touches March 2020 to December 2021 are left out. " + SOURCE)
+         f"{len(ev)} rises in {ev.prov.nunique()} provinces are studied. Rises whose before-and-after window touches March 2020 to December 2021 are left out. " + SOURCE)
 
 
 def ontario_table():
@@ -99,14 +99,16 @@ def bunching():
     ax.text(-5.7, 1.9, f"Below the new minimum\n{s.value['below']:.1f} per 100".replace("-", "−"), color=INK, fontsize=10.5)
     ax.text(2.3, 1.9, f"From the minimum to $4 above\n+{s.value['above']:.1f} per 100", color=INK, fontsize=10.5)
     t = s.loc["total"]
+    n = len(pd.read_csv(OUTPUT / "events.csv"))
     save(fig, "bunching.png", "Low-paid jobs moved up the pay scale, and the total held",
          f"All pay levels together: {t.value:+.1f} employees per 100 people ({t.low:+.1f} to {t.high:+.1f}), a change too small to tell from zero.".replace("-", "−"),
-         "Average of 22 rises, each compared with provinces that had none, for 12 months before and after. Lines are 95% ranges "
+         f"Average of {n} rises, each compared with provinces that had none, for 12 months before and after. Lines are 95% ranges "
          "from a wild cluster bootstrap by province.\n" + SOURCE)
 
 
 def event_study():
     d = pd.read_csv(OUTPUT / "event_study.csv")
+    ev = pd.read_csv(OUTPUT / "events.csv")
     order = ["Age 15 to 19", "Age 20 to 24", "Exposure: highest 10%", "Everyone 15 to 64"]
     labels = {"Exposure: highest 10%": "Most exposed 10%"}
     fig, axes = plt.subplots(1, 4, figsize=(10, 5.0), sharey=True)
@@ -123,7 +125,7 @@ def event_study():
         ax.set_xlabel("Quarters from the rise")
     axes[0].set_ylabel("Employment rate vs. comparison provinces, %")
     save(fig, "event_study.png", "Employment doesn't clearly move in the year after a rise",
-         "Relative to the 12 months before each rise, with seasons removed. An average rise is 7.8% above comparison provinces.",
+         f"Relative to the 12 months before each rise, with seasons removed. An average rise is {(ev.dose - ev.control_dose).mean():.1%} above comparison provinces.",
          "Shaded bands are 95% ranges from a wild cluster bootstrap by province. Teen employment drifts up before rises and back after, "
          "within the band; these data can't say whether that is timing or noise. " + SOURCE)
 
@@ -131,6 +133,7 @@ def event_study():
 def placebo():
     p = pd.read_csv(OUTPUT / "placebo.csv").set_index("group")
     el = pd.read_csv(OUTPUT / "elasticities.csv")
+    n = len(pd.read_csv(OUTPUT / "events.csv"))
     order = [("Age 15 to 19", "Age 15 to 19"), ("Age 20 to 24", "Age 20 to 24"), ("Exposure: highest 10%", "Most exposed 10%"),
              ("Everyone 15 to 64", "Everyone 15 to 64")]
     fig, ax = plt.subplots(figsize=(10, 4.2))
@@ -149,11 +152,12 @@ def placebo():
     ax.set_xlabel("Employment elasticity: % change in employment for a 1% rise in the minimum")
     ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2, fontsize=9.5)
     save(fig, "placebo.png", "For employment, real rises look like made-up ones",
-         "22 made-up rises, drawn 4,000 times from province-months with no real one, against the real 22.", SOURCE)
+         f"{n} made-up rises, drawn 4,000 times from province-months with no real one, against the real {n}.", SOURCE)
 
 
 def spillovers():
     s = pd.read_csv(OUTPUT / "spillovers.csv")
+    end = pd.read_csv(OUTPUT / "percentiles.csv").year.max()
     fig, ax = plt.subplots(figsize=(10, 5.6))
     fig.subplots_adjust(left=0.07, right=0.98, top=0.84, bottom=0.2)
     ax.fill_between(s.percentile, s.low, s.high, color=BLUE, alpha=0.16, lw=0, label="95% range")
@@ -166,7 +170,7 @@ def spillovers():
         r = s[s.percentile == q].iloc[0]
         ax.annotate(f"{r.elasticity:.2f}", (q, r.elasticity), xytext=(8, 6), textcoords="offset points", color=INK, fontsize=10)
     save(fig, "spillovers.png", "Raises fade out about a third of the way up the pay scale",
-         "Province and year effects and a trend for each province are removed, 2006 to 2025, using every rise, large or small.",
+         f"Province and year effects and a trend for each province are removed, 2006 to {end}, using every rise, large or small.",
          "From the 40th percentile up the range includes zero. Pay there still leans positive, so part of the lower estimates may be "
          "general pay growth in provinces that raised the minimum.\nRounded pay reports may add to the estimates near the minimum. " + SOURCE)
 
@@ -191,7 +195,7 @@ def groups():
     axes[0].set_yticklabels([o.replace("Exposure: highest 10%", "Most exposed 10%").replace("Exposure: next 20%", "Next 20%")
                             .replace("Exposure: lowest 70%", "Least exposed 70%") for o in order])
     save(fig, "groups.png", "Pay rises for those most exposed. Employment doesn't move clearly for anyone",
-         "Average of 22 rises. Lines are 95% ranges from a wild cluster bootstrap by province.",
+         f"Average of {len(pd.read_csv(OUTPUT / 'events.csv'))} rises. Lines are 95% ranges from a wild cluster bootstrap by province.",
          "Women's employment range clears zero, but with this many comparisons one such result is expected by chance.\n" + SOURCE)
 
 
