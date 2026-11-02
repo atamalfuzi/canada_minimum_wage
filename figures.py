@@ -180,7 +180,7 @@ def groups():
     order = ["Age 15 to 19", "Age 20 to 24", "Age 25 to 54", "Age 55 to 64", "Men", "Women", "No postsecondary",
              "Exposure: highest 10%", "Exposure: next 20%", "Exposure: lowest 70%", "Everyone 15 to 64"]
     fig, axes = plt.subplots(1, 2, figsize=(10, 6.2), sharey=True)
-    fig.subplots_adjust(left=0.2, right=0.98, top=0.84, bottom=0.17, wspace=0.08)
+    fig.subplots_adjust(left=0.2, right=0.98, top=0.84, bottom=0.19, wspace=0.08)
     for ax, outcome, colour, title in ((axes[0], "wage", GREEN, "Average pay"), (axes[1], "employment", BLUE, "Employment rate")):
         g = el[el.outcome == outcome].set_index("group").loc[order]
         y = np.arange(len(order))[::-1]
@@ -196,7 +196,9 @@ def groups():
                             .replace("Exposure: lowest 70%", "Least exposed 70%") for o in order])
     save(fig, "groups.png", "Pay rises for those most exposed. Employment doesn't move clearly for anyone",
          f"Average of {len(pd.read_csv(OUTPUT / 'events.csv'))} rises. Lines are 95% ranges from a wild cluster bootstrap by province.",
-         "Women's employment range clears zero, but with this many comparisons one such result is expected by chance.\n" + SOURCE)
+         "Women's employment is the only one of these 11 employment ranges clear of zero. Across all 66 group and outcome comparisons, including "
+         "those not charted, 7 ranges are clear: 4 for pay, where a rise is expected, and 3 of the 55 for jobs and hours, about what chance "
+         "alone would give.\n" + SOURCE)
 
 
 def exposure():

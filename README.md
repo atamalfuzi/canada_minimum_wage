@@ -81,7 +81,9 @@ People without a job have no pay to measure, so looking only at low-paid workers
 
 ![Pay and employment by group](figures/groups.png)
 
-The most exposed 10% see average pay rise 0.41% per 1% rise (0.27 to 0.59), close to teens at 0.43% (0.29 to 0.59). Their employment moves by −0.02 (−0.21 to 0.22) and hours per person by −0.10 (−0.32 to 0.24). Within this group, jobs below the new minimum fall by 8.6 per 100 people and jobs just above rise by 8.6. Women's employment is the one range clear of zero, but among this many comparisons one such result is expected by chance.
+The most exposed 10% see average pay rise 0.41% per 1% rise (0.27 to 0.59), close to teens at 0.43% (0.29 to 0.59). Their employment moves by −0.02 (−0.21 to 0.22) and hours per person by −0.10 (−0.32 to 0.24). Within this group, jobs below the new minimum fall by 8.6 per 100 people and jobs just above rise by 8.6.
+
+In the chart's employment panel, women's employment is the only one of 11 ranges clear of zero (0.08, 0.01 to 0.21). Across all 66 group and outcome comparisons in `output/elasticities.csv`, 7 ranges are clear of zero. Four are for pay, where a rise is expected: teens, the most exposed 10%, men and people with no postsecondary education. The other three are among the 55 comparisons for jobs and hours: women's employment, the share of women who are employees, and food jobs in the next 20% by exposure. Chance alone would put about 3 of 55 outside a 95% range, so these three don't stand out as effects.
 
 ## Method
 
