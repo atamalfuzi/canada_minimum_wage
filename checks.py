@@ -42,13 +42,25 @@ def placebo(c, ev, groups=MAIN, draws=4000, seed=0):
     return pd.DataFrame(rows)
 
 
+def first_of_each_run(ev):
+    """One rise from each run in a province whose windows share months. Later rises in a run go even when they clear the
+    first one's window, since the months before them still follow a rise that happened."""
+    keep, last_end = [], {}
+    for e in ev.sort_values("date").itertuples():
+        if e.prov not in last_end or e.pre[0] > last_end[e.prov]:
+            keep.append(e.Index)
+        last_end[e.prov] = e.post[-1]
+    return ev.loc[sorted(keep)]
+
+
 def sensitivity(c, base):
     """Do the headline numbers survive other event rules, and dropping any one province?"""
     m, _ = wide()
     variants = {f"All {len(base)} rises": base,
                 "Real rise of at least 6%": events(min_dose=0.06),
                 "Comparison provinces rose under 2%": events(control_max=0.02),
-                "One step in the 12 months after": base[[(m[e.prov].loc[e.post].diff() > 0).sum() == 0 for e in base.itertuples()]]}
+                "One step in the 12 months after": base[[(m[e.prov].loc[e.post].diff() > 0).sum() == 0 for e in base.itertuples()]],
+                "No overlapping windows in a province": first_of_each_run(base)}
     for prov in sorted(base.prov.unique()):
         variants[f"Without {prov}"] = base[base.prov != prov]
     rows = []

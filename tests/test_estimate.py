@@ -222,5 +222,26 @@ def test_placebo_months_have_no_real_rise_and_avoid_covid():
     assert not f.date.between("2020-01-01", "2021-12-01").any()
 
 
+def rises(*found):
+    rows = []
+    for prov, date in found:
+        pre, post = estimate.windows(pd.Timestamp(date))
+        rows.append(dict(prov=prov, date=pd.Timestamp(date), pre=pre, post=post))
+    return pd.DataFrame(rows)
+
+
+def test_overlap_check_keeps_the_first_rise_of_each_run():
+    ev = rises(("AB", "2011-09-01"), ("AB", "2015-10-01"), ("AB", "2016-10-01"), ("AB", "2017-10-01"), ("AB", "2018-10-01"),
+               ("PE", "2010-06-01"), ("PE", "2011-10-01"), ("ON", "2014-06-01"))
+    kept = checks.first_of_each_run(ev)
+    assert list(zip(kept.prov, kept.date.dt.strftime("%Y-%m"))) == [("AB", "2011-09"), ("AB", "2015-10"), ("PE", "2010-06"), ("ON", "2014-06")]
+
+
+def test_overlap_check_counts_any_shared_month_within_one_province():
+    assert len(checks.first_of_each_run(rises(("AA", "2015-01-01"), ("AA", "2017-01-01")))) == 2    # 24 months: none shared
+    assert len(checks.first_of_each_run(rises(("AA", "2015-01-01"), ("AA", "2016-12-01")))) == 1    # 23 months: one shared
+    assert len(checks.first_of_each_run(rises(("AA", "2015-01-01"), ("BB", "2015-06-01")))) == 2    # other provinces don't count
+
+
 def test_exposure_inputs_exclude_anything_that_reveals_a_job():
     assert not set(panels.FEATURES) & {"LFSSTAT", "NAICS_21", "UTOTHRS", "wage", "EFAMTYPE"}

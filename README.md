@@ -58,11 +58,12 @@ Other ways of asking the same question:
 | Real rise of at least 6% | 10 | −0.15 | −0.40 to 0.29 |
 | Comparison provinces rose under 2% | 19 | −0.06 | −0.36 to 0.46 |
 | One step in the 12 months after | 12 | −0.10 | −0.86 to 0.47 |
+| No overlapping windows in a province | 17 | 0.02 | −0.20 to 0.43 |
 | Annual panel using every rise, with province trends | all | −0.09 | −0.49 to 0.39 |
 | Same annual panel without 2020-21 | all | −0.01 | −0.37 to 0.40 |
 | Dropping any one province | 17 to 21 | −0.07 to 0.04 | |
 
-The range widens with fewer rises, and the strongest rises lean more negative. For everyone aged 15 to 64 the annual panel gives 0.04 (−0.05 to 0.16), or 0.05 (−0.02 to 0.16) without 2020-21.
+The range is wider with fewer rises in most of these checks, and the strongest rises lean more negative. For everyone aged 15 to 64 the annual panel gives 0.04 (−0.05 to 0.16), or 0.05 (−0.02 to 0.16) without 2020-21.
 
 ### 3. How far up do raises reach?
 
@@ -102,6 +103,7 @@ The most exposed 10% see average pay rise 0.41% per 1% rise (0.27 to 0.59), clos
 
 - Twelve months is short. Jobs that adjust over several years, through fewer new businesses or more automation, won't show up here.
 - Comparison provinces overlap across rises, and a province can hit its own shock at the same time. Alberta's rises came alongside the 2015-16 oil slump, though dropping Alberta leaves the result about the same.
+- Rises in the same province can overlap. Eight of the 22 have another 12 to 16 months away: Alberta 2015 to 2018, New Brunswick 2010 and 2011, and Prince Edward Island 2010 and 2011. The months before the later rise are then also months after the earlier one, all 12 of them in Alberta and New Brunswick and 8 of 12 in Prince Edward Island, so a delayed response to one rise can end up in the starting point of the next. Keeping only the first rise of each run drops Alberta's October 2016, 2017 and 2018, New Brunswick's April 2011 and Prince Edward Island's October 2011. That leaves 17 rises and about the same result, shown in the checks table. Smaller rises that don't count as events can still fall inside a window.
 - Pay is self-reported and often rounded. Lower legal rates for students and, in some provinces, liquor servers mean some reported pay below the minimum is legal.
 - Provinces raise the minimum when they choose to, often in good times. Province trends help but don't remove this.
 - Teen employment drifts up before rises and back after. It stays inside the range, but with these data I can't tell if that is timing or noise.
