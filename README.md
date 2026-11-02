@@ -59,15 +59,18 @@ Other ways of asking the same question:
 | Comparison provinces rose under 2% | 19 | −0.06 | −0.36 to 0.46 |
 | One step in the 12 months after | 12 | −0.10 | −0.86 to 0.47 |
 | Annual panel using every rise, with province trends | all | −0.09 | −0.49 to 0.39 |
+| Same annual panel without 2020-21 | all | −0.01 | −0.37 to 0.40 |
 | Dropping any one province | 17 to 21 | −0.07 to 0.04 | |
 
-The range widens with fewer rises, and the strongest rises lean more negative. For everyone aged 15 to 64 the annual panel gives 0.04 (−0.05 to 0.16).
+The range widens with fewer rises, and the strongest rises lean more negative. For everyone aged 15 to 64 the annual panel gives 0.04 (−0.05 to 0.16), or 0.05 (−0.02 to 0.16) without 2020-21.
 
 ### 3. How far up do raises reach?
 
 ![Pay response at each point in the pay scale](figures/spillovers.png)
 
 A 1% higher minimum lifts pay by 0.83% at the 5th percentile (0.78 to 0.96), 0.60% at the 10th (0.48 to 0.87) and 0.23% at the 25th (0.12 to 0.36). From the 40th percentile the range includes zero. The flat 0.13 to 0.14 near the top suggests that part of the lower numbers is general pay growth in the same provinces, not the minimum itself.
+
+These estimates use every year from 2006 to 2025, including 2020 and 2021, when low-paid job losses changed who was left in the pay scale. That change isn't a minimum wage effect, so I reran the panel without those two years. It gives 0.82% at the 5th percentile (0.76 to 0.95), 0.60% at the 10th (0.46 to 0.87) and 0.23% at the 25th (0.10 to 0.37), and the range still includes zero from the 40th. No percentile moves by as much as 0.02, so the numbers above stay as the main ones.
 
 ### 4. Who is affected most?
 
@@ -91,7 +94,7 @@ The most exposed 10% see average pay rise 0.41% per 1% rise (0.27 to 0.59), clos
 
 **Ranges.** With about ten provinces, ordinary clustered errors are far too narrow. Ranges come from a wild cluster bootstrap by province with Webb weights, inverted into a 95% range.
 
-**Pay scale.** Weighted percentiles of real pay by province and year, regressed on the log minimum with province and year effects and a straight-line trend for each province.
+**Pay scale.** Weighted percentiles of real pay by province and year, regressed on the log minimum with province and year effects and a straight-line trend for each province. Unlike the rises, whose windows avoid March 2020 to December 2021, this panel and the annual jobs panel keep all of 2020 and 2021. Reruns without those years are in `output/spillovers_no_2020_21.csv` and `output/panel_elasticities_no_2020_21.csv`.
 
 **Survey.** The public files have no person identifier, so these are repeated samples of people, not the same people followed over time. Rates use the survey's final weights, and the minimum for a month is the rate in force on the 15th, because the survey's reference week holds the 15th.
 

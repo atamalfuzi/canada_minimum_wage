@@ -6,6 +6,7 @@ from data import OUTPUT, cpi, last_month, minimum_wage
 from panels import cells
 
 COVID = (pd.Timestamp("2020-03-01"), pd.Timestamp("2021-12-01"))
+COVID_YEARS = (2020, 2021)    # whole years, for the annual panels
 FIRST, LAST = pd.Timestamp("2006-01-01"), last_month()
 FULL_YEARS_TO = (LAST + pd.DateOffset(months=1)).year - 1    # the annual tables leave out a part-finished year
 MIN_DOSE, CONTROL_MAX = 0.04, 0.03    # real rise for an event; largest nominal rise a comparison province may have
@@ -161,6 +162,11 @@ def annual_minimum():
     return real
 
 
+def leave_out_years(c, years):
+    """The survey tables without some calendar years, to rerun an annual panel."""
+    return {**c, **{k: c[k][~c[k].date.dt.year.isin(years)] for k in ("outcome", "bins")}}
+
+
 def percentiles(bins, qs=range(5, 80, 5)):
     b = bins.assign(year=bins.date.dt.year)
     g = b[b.year <= FULL_YEARS_TO].groupby(["prov", "year", "bin"]).w.sum().reset_index()
@@ -246,4 +252,8 @@ if __name__ == "__main__":
     sp, pc = spillovers(c)
     sp.to_csv(OUTPUT / "spillovers.csv", index=False)
     pc.to_csv(OUTPUT / "percentiles.csv", index=False)
+    # Job losses in 2020-21 changed who was left in the pay scale, which a minimum wage didn't do.
+    no_covid = leave_out_years(c, COVID_YEARS)
+    panel_jobs(no_covid).to_csv(OUTPUT / "panel_elasticities_no_2020_21.csv", index=False)
+    spillovers(no_covid)[0].to_csv(OUTPUT / "spillovers_no_2020_21.csv", index=False)
     (OUTPUT / "estimated_through.txt").write_text(LAST.strftime("%Y-%m") + "\n")

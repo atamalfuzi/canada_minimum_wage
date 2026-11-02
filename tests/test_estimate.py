@@ -143,6 +143,42 @@ def test_percentiles_leave_out_a_part_finished_year(monkeypatch):
     assert estimate.percentiles(bins, qs=[50]).year.tolist() == [2015]
 
 
+def covid_panel(monkeypatch, elasticity=0.5):
+    """Six provinces, 2006 to 2025: pay and jobs follow the minimum exactly, except a shock in 2020-21 that hits
+    provinces with a higher minimum harder."""
+    rng = np.random.default_rng(0)
+    real = pd.DataFrame([dict(prov=p, year=y, lmw=rng.normal(0, 0.05)) for p in "ABCDEF" for y in range(2006, 2026)])
+    monkeypatch.setattr(estimate, "annual_minimum", lambda: real)
+    monkeypatch.setattr(estimate, "FULL_YEARS_TO", 2025)
+    bins, outcome = [], []
+    for r in real.itertuples():
+        date = pd.Timestamp(r.year, 1, 1)
+        y = elasticity * r.lmw + (3 * r.lmw if r.year in (2020, 2021) else 0)
+        bins.append(pd.DataFrame(dict(prov=r.prov, date=date, bin=np.exp(y) * np.arange(1.0, 101.0), w=1.0, group="Everyone 15 to 64")))
+        outcome.append(dict(prov=r.prov, date=date, w=100.0, emp=50 * np.exp(y), hrs=800 * np.exp(y), group="Everyone 15 to 64"))
+    return dict(bins=pd.concat(bins, ignore_index=True), outcome=pd.DataFrame(outcome))
+
+
+def test_leaving_out_years_takes_them_from_both_tables_and_nothing_else():
+    dates = pd.to_datetime(["2019-12-01", "2020-01-01", "2021-12-01", "2022-01-01"])
+    c = dict(outcome=pd.DataFrame(dict(date=dates)), bins=pd.DataFrame(dict(date=dates)), exposed_ages="kept")
+    d = estimate.leave_out_years(c, estimate.COVID_YEARS)
+    assert d["outcome"].date.dt.year.tolist() == d["bins"].date.dt.year.tolist() == [2019, 2022]
+    assert d["exposed_ages"] == "kept" and len(c["outcome"]) == 4
+
+
+def test_annual_panels_recover_the_answer_once_covid_years_are_out(monkeypatch):
+    c = covid_panel(monkeypatch)
+    d = estimate.leave_out_years(c, estimate.COVID_YEARS)
+    jobs = estimate.panel_jobs(d)
+    pay, table = estimate.spillovers(d)
+    assert not table.year.isin([2020, 2021]).any()
+    assert jobs.elasticity.to_numpy() == pytest.approx(0.5, abs=1e-6)
+    assert pay.elasticity.to_numpy() == pytest.approx(0.5, abs=1e-6)
+    assert not np.isclose(estimate.panel_jobs(c).elasticity, 0.5, atol=0.05).any()
+    assert not np.isclose(estimate.spillovers(c)[0].elasticity, 0.5, atol=0.05).any()
+
+
 def test_an_event_needs_twelve_months_of_data_after_it(monkeypatch):
     m, p = minimums(AA=[("2026-09-01", 11.0)])
     assert estimate.events(m, p).empty
